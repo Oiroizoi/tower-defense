@@ -1801,7 +1801,7 @@
       frame++;
     }
 
-    let progress = localStorage.getItem("tdProgress") || "00000"; //2 means map completed on hard, 1 means map completed on normal, 0 means map not completed
+    let progress = localStorage.getItem("progress") || "00000"; //2 means map completed on hard, 1 means map completed on normal, 0 means map not completed
     let player = {
       money: 50,
       lives: 100,
@@ -1830,7 +1830,7 @@
 
     if (progress == "00000" && localStorage.getItem("tdComplete")) progress = "10000"; ////
     progress = progress.padEnd(maps.length, "0");
-    localStorage.setItem("tdProgress", progress);
+    localStorage.setItem("progress", progress);
     progress = progress.split(""); //Turn the string into an array
 
     ctx.fillStyle = "white";
@@ -2092,7 +2092,7 @@
       if (complete) {
         let num = (difficulty == "hard") ? 2 : 1;
         if (progress[mapIndex] < num) progress.splice(mapIndex, 1, num); //Update progress
-        localStorage.setItem("tdProgress", progress.join("")); //Save to local storage as string
+        localStorage.setItem("progress", progress.join("")); //Save to local storage as string
       }
       //If a tower has a menu open, close it
       let menuTower = towers.find(tower => tower?.menuOpen);
