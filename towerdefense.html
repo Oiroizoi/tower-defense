@@ -1,414 +1,407 @@
-{% extends 'header.html' %}
-<!-- ^^ This means add this file to the end of the contents of header.html -->
-<!-- This is where the title, top buttons, and stylesheet is located -->
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Blewnz</title>
+    <link rel="stylesheet" href="general.css">
+    <style>
+      body {
+        background: var(--bg-darker);
+        user-select: none;
+      }
 
-<!-- Change title here -->
-{% block title %}Blewnz{% endblock %}
+      #container {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        aspect-ratio: 16 / 9;
+        outline: 1px solid var(--dark-gray);
+        overflow: hidden;
+      }
 
-<!-- Extra style declarations here -->
-{% block style %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/new.css') }}">
-<style>
-  body {
-    background: var(--bg-darker);
-    user-select: none;
-  }
+      @media (max-aspect-ratio: 16/9) {
+        #container {
+          width: 100%;
+          font-size: calc(5vw / 6);
+        }
+      }
 
-  #container {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    aspect-ratio: 16 / 9;
-    outline: 1px solid var(--dark-gray);
-    overflow: hidden;
-  }
+      @media (min-aspect-ratio: 16/9) {
+        #container {
+          height: 100%;
+          font-size: calc(40vh / 27);
+        }
+      }
 
-  @media (max-aspect-ratio: 16/9) {
-    #container {
-      width: 100%;
-      font-size: calc(5vw / 6);
-    }
-  }
+      #game {
+        position: absolute;
+        width: 100%;
+        background: linear-gradient(to bottom right, #030, #300, #003);
+        background-size: 100%;
+      }
 
-  @media (min-aspect-ratio: 16/9) {
-    #container {
-      height: 100%;
-      font-size: calc(40vh / 27);
-    }
-  }
+      #progress {
+        position: absolute;
+        left: 1.5%;
+        top: calc(24% / 9);
+        width: 100%;
+        font-size: 250%;
+        color: var(--light-blue);
+      }
 
-  #game {
-    position: absolute;
-    width: 100%;
-    background: linear-gradient(to bottom right, #030, #300, #003);
-    background-size: 100%;
-  }
+      #progress.complete {
+        color: var(--light-yellow);
+        filter: drop-shadow(0 0 5px #fffa);
+      }
 
-  #progress {
-    position: absolute;
-    left: 1.5%;
-    top: calc(24% / 9);
-    width: 100%;
-    font-size: 250%;
-    color: var(--light-blue);
-  }
+      #medal {
+        position: absolute;
+        height: 100%;
+      }
 
-  #progress.complete {
-    color: var(--light-yellow);
-    filter: drop-shadow(0 0 5px #fffa);
-  }
+      .complete #progressText {
+        margin-left: 3.5%;
+      }
 
-  #medal {
-    position: absolute;
-    height: 100%;
-  }
+      #back {
+        position: absolute;
+        left: 0%;
+        top: 0;
+        width: calc(75% / 16);
+        height: calc(75% / 9);
+        padding: 0;
+        text-align: center;
+        font-size: 400%;
+        line-height: 130%;
+        color: white;
+        cursor: pointer;
+      }
 
-  .complete #progressText {
-    margin-left: 3.5%;
-  }
+      #prevMap {
+        position: absolute;
+        left: 15%;
+        top: calc(250% / 9);
+        width: calc(75% / 16);
+        height: calc(75% / 9);
+        padding: 0;
+        text-align: center;
+        font-size: 400%;
+        line-height: 130%;
+        color: var(--light-cyan);
+        cursor: pointer;
+      }
 
-  #back {
-    position: absolute;
-    left: 0%;
-    top: 0;
-    width: calc(75% / 16);
-    height: calc(75% / 9);
-    padding: 0;
-    text-align: center;
-    font-size: 400%;
-    line-height: 130%;
-    color: white;
-    cursor: pointer;
-  }
+      #nextMap {
+        position: absolute;
+        right: 15%;
+        top: calc(250% / 9);
+        width: calc(75% / 16);
+        height: calc(75% / 9);
+        padding: 0;
+        text-align: center;
+        font-size: 400%;
+        line-height: 130%;
+        color: var(--light-cyan);
+        cursor: pointer;
+      }
 
-  #prevMap {
-    position: absolute;
-    left: 15%;
-    top: calc(250% / 9);
-    width: calc(75% / 16);
-    height: calc(75% / 9);
-    padding: 0;
-    text-align: center;
-    font-size: 400%;
-    line-height: 130%;
-    color: var(--light-cyan);
-    cursor: pointer;
-  }
+      #prevMap:active, #nextMap:active {
+        color: white;
+      }
 
-  #nextMap {
-    position: absolute;
-    right: 15%;
-    top: calc(250% / 9);
-    width: calc(75% / 16);
-    height: calc(75% / 9);
-    padding: 0;
-    text-align: center;
-    font-size: 400%;
-    line-height: 130%;
-    color: var(--light-cyan);
-    cursor: pointer;
-  }
+      #difficulty {
+        position: absolute;
+        left: 0;
+        top: 56%;
+        width: 100%;
+        text-align: center;
+        font-size: 200%;
+      }
 
-  #prevMap:active, #nextMap:active {
-    color: white;
-  }
+      #normal, #hard {
+        padding: 0.25% 1%;
+        margin: 0 0.5%;
+        background: transparent;
+        border: 1px solid;
+        border-radius: 9999px;
+        font-size: calc(inherit x 0.75);
+        font-weight: 500;
+      }
 
-  #difficulty {
-    position: absolute;
-    left: 0;
-    top: 56%;
-    width: 100%;
-    text-align: center;
-    font-size: 200%;
-  }
+      #normal {
+        color: var(--light-green);
+      }
 
-  #normal, #hard {
-    padding: 0.25% 1%;
-    margin: 0 0.5%;
-    background: transparent;
-    border: 1px solid;
-    border-radius: 9999px;
-    font-size: calc(inherit x 0.75);
-    font-weight: 500;
-  }
+      #normal.pressed {
+        background: var(--light-green);
+        border-color: var(--light-green);
+        color: var(--bg-dark);
+      }
 
-  #normal {
-    color: var(--light-green);
-  }
+      #hard {
+        color: var(--light-orange);
+      }
 
-  #normal.pressed {
-    background: var(--light-green);
-    border-color: var(--light-green);
-    color: var(--bg-dark);
-  }
+      #hard.pressed {
+        background: var(--light-orange);
+        border-color: var(--light-orange);
+        color: var(--bg-dark);
+      }
 
-  #hard {
-    color: var(--light-orange);
-  }
+      #normal:not(.pressed):hover, #hard:not(.pressed):hover {
+        background: var(--bg-dark);
+      }
 
-  #hard.pressed {
-    background: var(--light-orange);
-    border-color: var(--light-orange);
-    color: var(--bg-dark);
-  }
+      #startButton {
+        position: absolute;
+        left: 50%;
+        bottom: 5%;
+        transform: translateX(-50%);
+        padding: 0.25% 1%;
+        background: transparent;
+        color: var(--light-cyan);
+        border: 1px solid;
+        border-radius: 9999px;
+        font-size: 200%;
+        font-weight: 500;
+      }
 
-  #normal:not(.pressed):hover, #hard:not(.pressed):hover {
-    background: var(--bg-dark);
-  }
+      #startButton:not(.unselectable):hover {
+        background: var(--bg-dark);
+      }
 
-  #startButton {
-    position: absolute;
-    left: 50%;
-    bottom: 5%;
-    transform: translateX(-50%);
-    padding: 0.25% 1%;
-    background: transparent;
-    color: var(--light-cyan);
-    border: 1px solid;
-    border-radius: 9999px;
-    font-size: 200%;
-    font-weight: 500;
-  }
+      #grid {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        aspect-ratio: 32 / 15;
+        border-collapse: collapse;
+      }
 
-  #startButton:not(.unselectable):hover {
-    background: var(--bg-dark);
-  }
+      table, td {
+        border: none;
+      }
 
-  #grid {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    aspect-ratio: 32 / 15;
-    border-collapse: collapse;
-  }
+      td {
+        width: calc(100% / 32);
+      }
 
-  table, td {
-    border: none;
-  }
+      .visibleLines td {
+        border: 1px solid #555;
+      }
 
-  td {
-    width: calc(100% / 32);
-  }
+      td.droppable {
+        background: #aaa5;
+      }
 
-  .visibleLines td {
-    border: 1px solid #555;
-  }
+      td.undroppable {
+        background: #a555;
+      }
 
-  td.droppable {
-    background: #aaa5;
-  }
+      td.tower {
+        cursor: pointer;
+      }
 
-  td.undroppable {
-    background: #a555;
-  }
+      #alert {
+        position: absolute;
+        left: 35%;
+        top: 35%;
+        width: 30%;
+        height: 30%;
+        padding: 1.5%;
+        box-sizing: border-box;
+        background: #cccc;
+        color: var(--bg-dark);
+        font-size: 150%;
+        filter: drop-shadow(10px 10px 5px black);
+      }
 
-  td.tower {
-    cursor: pointer;
-  }
+      #alert h1 {
+        margin: 0 0 3% 0;
+        font-size: 125%;
+        font-weight: normal;
+        text-align: inherit;
+      }
 
-  #alert {
-    position: absolute;
-    left: 35%;
-    top: 35%;
-    width: 30%;
-    height: 30%;
-    padding: 1.5%;
-    box-sizing: border-box;
-    background: #cccc;
-    color: var(--bg-dark);
-    font-size: 150%;
-    filter: drop-shadow(10px 10px 5px black);
-  }
+      #ok {
+        position: absolute;
+        left: 40%;
+        bottom: 10%;
+        width: 20%;
+        height: 20%;
+        padding: 0.25% 1%;
+        background: white;
+        color: var(--color-blue);
+        border: 1px solid;
+        border-radius: 9999px;
+        font-size: calc(400% / 3);
+        font-weight: 500;
+        filter: drop-shadow(2px 2px 1px #000c);
+      }
 
-  #alert h1 {
-    margin: 0 0 3% 0;
-    font-size: 125%;
-    font-weight: normal;
-    text-align: inherit;
-  }
+      #ok:hover {
+        background: white !important;
+        filter: brightness(90%) drop-shadow(2px 2px 1px #000a);
+      }
 
-  #ok {
-    position: absolute;
-    left: 40%;
-    bottom: 10%;
-    width: 20%;
-    height: 20%;
-    padding: 0.25% 1%;
-    background: white;
-    color: var(--color-blue);
-    border: 1px solid;
-    border-radius: 9999px;
-    font-size: calc(400% / 3);
-    font-weight: 500;
-    filter: drop-shadow(2px 2px 1px #000c);
-  }
+      .menu {
+        position: absolute;
+        min-width: 15%;
+        max-width: 20%;
+        padding: 0.5%;
+        box-sizing: border-box;
+        background: #cccc;
+        color: var(--bg-dark);
+        text-align: center;
+        filter: drop-shadow(10px 10px 5px black);
+      }
 
-  #ok:hover {
-    background: white !important;
-    filter: brightness(90%) drop-shadow(2px 2px 1px #000a);
-  }
+      .splitButton {
+        color: var(--color-green);
+        border: 1px solid;
+        border-radius: 4px;
+        font-size: 80%;
+        font-weight: 500;
+        filter: drop-shadow(2px 2px 1px #000c);
+      }
 
-  .menu {
-    position: absolute;
-    min-width: 15%;
-    max-width: 20%;
-    padding: 0.5%;
-    box-sizing: border-box;
-    background: #cccc;
-    color: var(--bg-dark);
-    text-align: center;
-    filter: drop-shadow(10px 10px 5px black);
-  }
+      .splitButton:not(.unselectable) {
+        cursor: pointer;
+      }
 
-  .splitButton {
-    color: var(--color-green);
-    border: 1px solid;
-    border-radius: 4px;
-    font-size: 80%;
-    font-weight: 500;
-    filter: drop-shadow(2px 2px 1px #000c);
-  }
+      .buttonLeft {
+        width: fit-content;
+        padding: 0 1.5%;
+        border-radius: 4px 0 0 4px;
+        background: white;
+      }
 
-  .splitButton:not(.unselectable) {
-    cursor: pointer;
-  }
+      .buttonRight {
+        width: fit-content;
+        padding: 0 1.5%;
+        border-radius: 0 4px 4px 0;
+        background: var(--color-green);
+        color: white;
+      }
 
-  .buttonLeft {
-    width: fit-content;
-    padding: 0 1.5%;
-    border-radius: 4px 0 0 4px;
-    background: white;
-  }
+      .splitButton:not(.unselectable):hover {
+        filter: brightness(90%) drop-shadow(2px 2px 1px #000a);
+      }
 
-  .buttonRight {
-    width: fit-content;
-    padding: 0 1.5%;
-    border-radius: 0 4px 4px 0;
-    background: var(--color-green);
-    color: white;
-  }
+      .sellButton {
+        color: var(--color-red);
+      }
 
-  .splitButton:not(.unselectable):hover {
-    filter: brightness(90%) drop-shadow(2px 2px 1px #000a);
-  }
+      .sellButton .buttonRight {
+        background: var(--color-red);
+      }
 
-  .sellButton {
-    color: var(--color-red);
-  }
+      .bought .buttonLeft {
+      border-radius: 4px;
+      }
 
-  .sellButton .buttonRight {
-    background: var(--color-red);
-  }
+      .bought .buttonRight {
+        display: none;
+      }
 
-  .bought .buttonLeft {
-  border-radius: 4px;
-  }
+      .menu h1 {
+        margin: 0 0 4% 0;
+        font-size: 150%;
+        font-weight: normal;
+        text-align: inherit;
+      }
 
-  .bought .buttonRight {
-    display: none;
-  }
+      .menu h2 {
+        margin: 3% 0 0 0;
+        font-size: 125%;
+        font-weight: normal;
+      }
 
-  .menu h1 {
-    margin: 0 0 4% 0;
-    font-size: 150%;
-    font-weight: normal;
-    text-align: inherit;
-  }
+      #towers {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        aspect-ratio: 32 / 3;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5%;
+        background: #0005;
+        border-top: 1.5px solid var(--light-gray);
+        cursor: default;
+      }
 
-  .menu h2 {
-    margin: 3% 0 0 0;
-    font-size: 125%;
-    font-weight: normal;
-  }
+      #towers img {
+        height: calc(100% / 3);
+      }
 
-  #towers {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    aspect-ratio: 32 / 3;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 5%;
-    background: #0005;
-    border-top: 1.5px solid var(--light-gray);
-    cursor: default;
-  }
+      #towers img:not(.unselectable):hover {
+        cursor: grab;
+        filter: drop-shadow(0 0 6px white);
+      }
 
-  #towers img {
-    height: calc(100% / 3);
-  }
+      #towers img:not(.unselectable):active {
+        cursor: grabbing;
+      }
 
-  #towers img:not(.unselectable):hover {
-    cursor: grab;
-    filter: drop-shadow(0 0 6px white);
-  }
+      #towers img.unselectable {
+        opacity: 25%;
+      }
 
-  #towers img:not(.unselectable):active {
-    cursor: grabbing;
-  }
+      #towerDesc {
+        position: absolute;
+        top: 5%;
+        width: 100%;
+        text-align: center;
+        font-size: 150%;
+      }
 
-  #towers img.unselectable {
-    opacity: 25%;
-  }
+      #abilities {
+        position: absolute;
+        bottom: 10%;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 3%;
+        text-align: center;
+      }
 
-  #towerDesc {
-    position: absolute;
-    top: 5%;
-    width: 100%;
-    text-align: center;
-    font-size: 150%;
-  }
+      #abilities button {
+        width: 5.125%;
+        padding: 0.1% 0.3%;
+        font-size: 100%;
+      }
 
-  #abilities {
-    position: absolute;
-    bottom: 10%;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 3%;
-    text-align: center;
-  }
-
-  #abilities button {
-    width: 5.125%;
-    padding: 0.1% 0.3%;
-    font-size: 100%;
-  }
-
-  .invisible {
-    visibility: hidden;
-  }
+      .invisible {
+        visibility: hidden;
+      }
 
 
-  #quickmenu {
-    display: none;
-  }
+      #quickmenu {
+        display: none;
+      }
 
-  #content {
-    background-color: transparent;
-    font-family: "Segoe UI";
-  }
-</style>
-{% endblock %}
+      #content {
+        background-color: transparent;
+        font-family: "Segoe UI";
+      }
+    </style>
+  </head>
 
-<!-- Main content here -->
-{% block main %}
-  <div id="container">
-    <canvas id="game" width="1920" height="1080"></canvas>
-    <div id="progress"></div>
-    <table id="grid" class="hidden"></table>
-    <div id="towers" class="hidden">
-      <div id="towerDesc"></div>
-      <div id="abilities"></div>
+  <body>
+    <div id="container">
+      <canvas id="game" width="1920" height="1080"></canvas>
+      <div id="progress"></div>
+      <table id="grid" class="hidden"></table>
+      <div id="towers" class="hidden">
+        <div id="towerDesc"></div>
+        <div id="abilities"></div>
+      </div>
     </div>
-  </div>
-{% endblock %}
+  </body>
 
-<!-- Extra javascript here -->
-{% block script %}
   <script>
     let towerTypes = {
       basic: {
@@ -668,11 +661,11 @@
       };
 
       towerTypes[type].img = new Image();
-      towerTypes[type].img.src = `../static/img/towerdefense/${type}${type == "air" ? "-b" : ""}.png`;
+      towerTypes[type].img.src = `img/${type}${type == "air" ? "-b" : ""}.png`;
       towerTypes[type].icon = new Image();
-      towerTypes[type].icon.src = `../static/img/towerdefense/${type}.png`;
+      towerTypes[type].icon.src = `img/${type}.png`;
       towerTypes[type].activeImg = new Image();
-      towerTypes[type].activeImg.src = `../static/img/towerdefense/${type}-active.png`;
+      towerTypes[type].activeImg.src = `img/${type}-active.png`;
     }
 
     let enemyTypes = {
@@ -718,17 +711,17 @@
     };
     for (let type in enemyTypes) {
       enemyTypes[type].img = new Image();
-      enemyTypes[type].img.src = `../static/img/towerdefense/${type}.png`;
+      enemyTypes[type].img.src = `img/${type}.png`;
       if (type != "green" && type != "brownBoss" && type != "purpleBoss") {
         enemyTypes[type].imgSplit = new Image();
-        enemyTypes[type].imgSplit.src = `../static/img/towerdefense/${type}-split.png`;
+        enemyTypes[type].imgSplit.src = `img/${type}-split.png`;
       }
       if (enemyTypes[type].boss) {
         enemyTypes[type].imgRotated = new Image();
-        enemyTypes[type].imgRotated.src = `../static/img/towerdefense/${type}-r.png`;
+        enemyTypes[type].imgRotated.src = `img/${type}-r.png`;
         if (type == "boss") {
           enemyTypes[type].imgSplitRotated = new Image();
-          enemyTypes[type].imgSplitRotated.src = `../static/img/towerdefense/${type}-split-r.png`;
+          enemyTypes[type].imgSplitRotated.src = `img/${type}-split-r.png`;
         }
       }
     }
@@ -1156,14 +1149,14 @@
       noAlerts: new Image(),
       showAlerts: new Image()
     };
-    for (let button in buttons) buttons[button].src = `../static/img/towerdefense/${button}.png`;
+    for (let button in buttons) buttons[button].src = `img/${button}.png`;
 
     let abilitySymbols = {
       healing: new Image(),
       shield: new Image(),
       acceleration: new Image()
     };
-    for (let symbol in abilitySymbols) abilitySymbols[symbol].src = `../static/img/towerdefense/${symbol}.png`;
+    for (let symbol in abilitySymbols) abilitySymbols[symbol].src = `img/${symbol}.png`;
 
     let planes = {
       left: new Image(),
@@ -1171,7 +1164,7 @@
       up: new Image(),
       down: new Image(),
     };
-    for (let plane in planes) planes[plane].src = `../static/img/towerdefense/air-${plane}.png`;
+    for (let plane in planes) planes[plane].src = `img/air-${plane}.png`;
 
     let superPlanes = {
       left: new Image(),
@@ -1179,7 +1172,7 @@
       up: new Image(),
       down: new Image(),
     };
-    for (let plane in superPlanes) superPlanes[plane].src = `../static/img/towerdefense/superPlane-${plane}.png`;
+    for (let plane in superPlanes) superPlanes[plane].src = `img/superPlane-${plane}.png`;
 
     let canvas = document.getElementById("game");
     let ctx = canvas.getContext("2d");
@@ -1720,7 +1713,7 @@
       progressEl.classList.add("complete");
       let medal = document.createElement("img");
       medal.id = "medal";
-      medal.src = "../static/img/towerdefense/medal.png";
+      medal.src = "img/medal.png";
       progressEl.append(medal);
     }
     let progressText = document.createElement("span");
@@ -1916,7 +1909,7 @@
       //Show the towers
       document.getElementById("towers").classList.remove("hidden");
       for (let tower in towerTypes) {
-        document.getElementById("towers").innerHTML += `<img src="../static/img/towerdefense/${tower}.png" id="${tower}">`;
+        document.getElementById("towers").innerHTML += `<img src="img/${tower}.png" id="${tower}">`;
         document.getElementById("abilities").innerHTML += `<button id="${tower}Ability" class="invisible">Use ability</button>`;
       }
       for (let tower in towerTypes) {
@@ -1996,4 +1989,4 @@
       "Win a game without buying more than three towers"
     ];
   </script>
-{% endblock %}
+</html>
