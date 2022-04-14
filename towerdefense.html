@@ -1528,12 +1528,7 @@
             }
           }
           if (!enemy.visible) ctx.globalAlpha = 0.25; //If the enemy is hidden, make it semitransparent
-          ////
-          try {
-            ctx.drawImage(img, enemy.x - 40, enemy.y - 40);
-          } catch (error) {
-            console.log(currentWave, currentEnemy);
-          }
+          ctx.drawImage(img, enemy.x - 40, enemy.y - 40);
           ctx.globalAlpha = 1;
           if (enemy.abilities.includes("healing")) ctx.drawImage(abilitySymbols.healing, enemy.x - 40, enemy.y - 40);
           if (enemy.abilities.includes("shield")) ctx.drawImage(abilitySymbols.shield, enemy.x - 40, enemy.y - 40);
@@ -1840,7 +1835,7 @@
     }
 
     let progress = localStorage.getItem("progress") || ""; //2 means map completed on hard, 1 means map completed on normal, 0 means map not completed
-    let achievements = localStorage.getItem("tdAchievements") || "0000000";
+    let achievements = localStorage.getItem("achievements") || "0000000";
     achievements = achievements.split("");
     let player = {
       money: 50,
@@ -2245,7 +2240,7 @@
         gameAchievements[6] = 0;
       }
       let allAchievements = achievements.map((achievement, i) => +achievement || gameAchievements[i]); //New achievements + ones that were earned before
-      localStorage.setItem("tdAchievements", allAchievements.join(""));
+      localStorage.setItem("achievements", allAchievements.join(""));
       //If a tower has a menu open, close it
       let menuTower = towers.find(tower => tower?.menuOpen);
       menuTower?.closeMenu();
