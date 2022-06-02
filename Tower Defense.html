@@ -109,37 +109,16 @@
         border: solid 5px transparent;
       }
 
-      button {
-        padding: 3px 9px;
-        border-radius: 9999px;
-        background: transparent;
-        border: 1px solid;
-        font-size: 18px;
-        cursor: pointer;
-        user-select: none;
-      }
-
-      button:not(.unselectable):not(.pressed):hover {
-        background: var(--highlight-color);
-      }
-
-      button.pressed {
-        cursor: default;
-      }
-
       .unselectable {
         opacity: 50%;
         cursor: not-allowed;
       }
 
       #container {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
         aspect-ratio: 16 / 9;
         outline: 1px solid var(--dark-gray);
         overflow: hidden;
+        text-align: left;
       }
 
       @media (max-aspect-ratio: 16/9) {
@@ -161,6 +140,24 @@
         width: 100%;
         background: linear-gradient(to bottom right, #030, #300, #003);
         background-size: 100%;
+      }
+
+      button {
+        padding: 3px 9px;
+        border-radius: 9999px;
+        background: transparent;
+        border: 1px solid;
+        font-size: 18px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      button.pressed {
+        cursor: default;
+      }
+
+      button:not(.inline):hover {
+        background: #fff2;
       }
 
       #progress {
@@ -251,7 +248,6 @@
       #normal, #hard {
         padding: 0.25% 1%;
         margin: 0 0.5%;
-        background: transparent;
         border: 1px solid;
         border-radius: 9999px;
         font-size: calc(inherit x 0.75);
@@ -276,10 +272,6 @@
         background: var(--light-orange);
         border-color: var(--light-orange);
         color: var(--bg-dark);
-      }
-
-      #normal:not(.pressed):hover, #hard:not(.pressed):hover {
-        background: var(--bg-dark);
       }
 
       #startButton {
@@ -334,6 +326,7 @@
         background: #cccc;
         color: var(--bg-dark);
         font-size: 150%;
+        text-align: left;
         filter: drop-shadow(10px 10px 5px black);
       }
 
@@ -508,11 +501,15 @@
         padding: 0.1% 0.3%;
         font-size: 100%;
       }
+
+      .invisible {
+        visibility: hidden;
+      }
     </style>
   </head>
 
   <body>
-    <div id="container">
+    <div id="container" class="centered">
       <canvas id="game" width="1920" height="1080"></canvas>
       <div id="progress"></div>
       <table id="grid" class="hidden"></table>
@@ -637,7 +634,7 @@
             price: 75,
             use: function() {
               towers.filter(tower => tower.name == "Basic Tower").forEach(tower => tower.speedBoost = 250);
-              sound.playSFX("powerUp2");
+              sound.playSFX("powerUp");
             }
           }
         },
@@ -669,7 +666,7 @@
             price: 60,
             use: function() {
               enemies.forEach(enemy => enemy.stunned = 75);
-              sound.playSFX("powerUp2");
+              sound.playSFX("powerUp");
             }
           }
         },
@@ -701,7 +698,7 @@
             price: 55,
             use: function() {
               enemies.forEach(enemy => enemy.reverse = 75);
-              sound.playSFX("powerUp2");
+              sound.playSFX("powerUp");
             }
           }
         },
@@ -771,7 +768,7 @@
               ctx.strokeStyle = "transparent";
               ctx.fillStyle = "#ff8f4055";
               ctx.drawCircle(960, 450, 400);
-              sound.playSFX("explode1");
+              sound.playSFX("explode");
             }
           }
         },
@@ -803,7 +800,7 @@
             price: 380,
             use: function() {
               player.money += 100;
-              sound.playSFX("coin1");
+              sound.playSFX("coin");
             }
           }
         },
@@ -892,7 +889,7 @@
             use: function() {
               towers.forEach(tower => {
                 if (tower) tower.ultimateBoost = 250;
-                sound.playSFX("powerUp2");
+                sound.playSFX("powerUp");
               });
             }
           }
@@ -1383,27 +1380,7 @@
       let sound = {
         enabled: true,
         delay: 0.05,
-        sfx: {
-          powerReady: new Audio("sound/td/td_power_ready.wav"),
-          blip: new Audio("sound/td/td_blip01.wav"),
-          coin1: new Audio("sound/td/td_coin01.wav"),
-          coin2: new Audio("sound/td/td_coin02.wav"),
-          explode1: new Audio("sound/td/td_explode01.wav"),
-          explode2: new Audio("sound/td/td_explode02.wav"),
-          explode3: new Audio("sound/td/td_explode03.wav"),
-          laser: new Audio("sound/td/td_laser01.wav"),
-          powerUp1: new Audio("sound/td/td_powerup01.wav"),
-          powerUp2: new Audio("sound/td/td_powerup02.wav"),
-          shoot: new Audio("sound/td/td_shoot02.wav"),
-          success: new Audio("sound/td/td_success01.wav"),
-          basicHit: new Audio("sound/td/td_hit01.wav"),
-          slowingHit: new Audio("sound/td/td_slow_hit.wav"),
-          poisonHit: new Audio("sound/td/td_poison_hit.wav"),
-          moneyHit: new Audio("sound/td/td_money_hit.wav"),
-          airHit: new Audio("sound/td/td_plane_hit.wav"),
-          ultimateHit: new Audio("sound/td/td_ultimate_hit.wav"),
-          longRangeHit: new Audio("sound/td/td_longrange_hit.wav")
-        },
+        sfx: {},
         playSFX: function(name, towerName='default') {
           if (this.enabled) {
             let tempDelay = sound.delay;
@@ -1418,6 +1395,8 @@
           }
         }
       };
+      let sfxList = ["basicHit", "slowingHit", "poisonHit", "explode", "moneyHit", "planeHit", "ultimateHit", "longRangeHit", "powerReady", "powerUp", "laser", "coin", "blip", "shoot", "success"];
+      sfxList.forEach(sfx => sound.sfx[sfx] = new Audio(`sound/${sfx}.wav`));
       //Turn down the volume of each of the sound effects
       for (const effect in sound.sfx) {
           sound.sfx[effect].volume = 0.2;
@@ -1805,7 +1784,7 @@
                   ctx.strokeStyle = "transparent";
                   ctx.fillStyle = "#ff8f4055";
                   ctx.drawCircle(target.x, target.y, tower.explosionSize);
-                  sound.playSFX("explode1");
+                  sound.playSFX("explode");
                 }
                 if (tower.nextExplosion) {
                   tower.nextExplosion--;
@@ -1869,7 +1848,7 @@
               if (inRange.length) {
                 let target = inRange.sort((a, b) => b.distance - a.distance)[0];
                 target.hit(superPlane.strength);
-                sound.playSFX("airHit");
+                sound.playSFX("planeHit");
                 ctx.lineWidth = 4;
                 ctx.strokeStyle = "#ff6860";
                 ctx.beginPath();
@@ -1886,7 +1865,10 @@
         for (let tower in towerTypes) {
           let towerEl = document.getElementById(tower);
 
-          if (towerTypes[tower].power.cooldown) towerTypes[tower].power.cooldown--;
+          if (towerTypes[tower].power.cooldown) {
+            towerTypes[tower].power.cooldown--;
+            if (!towerTypes[tower].power.cooldown) sound.playSFX("powerReady");
+          }
 
           if (player.money >= towerTypes[tower].price) {
             towerEl.classList.remove("unselectable");
