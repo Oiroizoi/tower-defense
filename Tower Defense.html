@@ -2457,9 +2457,9 @@
         okButton.id = "ok";
         okButton.innerText = "OK";
         okButton.onclick = hideAlert;
-        document.addEventListener("keydown", hideAlert);
         alertBox.append(okButton);
         document.getElementById("container").append(alertBox);
+        document.addEventListener("keydown", hideAlert);
       }
 
       function hideAlert() {
