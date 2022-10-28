@@ -306,7 +306,7 @@
         border: 1px solid #555;
       }
 
-      td.controlsButton {
+      td.gameButton {
         cursor: pointer;
       }
 
@@ -326,6 +326,7 @@
         position: absolute;
         top: calc(100% / 72);
         left: calc(100% / 128);
+        width: 20%;
         box-sizing: border-box;
         color: var(--bg-dark);
         text-align: left;
@@ -335,23 +336,29 @@
       #controls div {
         height: 10%;
         padding: 5%;
-        font-size: 200%;
+        font-size: 175%;
         font-weight: 600;
         background: #cccc;
+        cursor: pointer;
       }
 
-      #controls div:hover {
+      #controls div.unselectable {
+        opacity: 100%;
+        cursor: not-allowed;
+        color: #555;
+      }
+
+      #controls div:not(.unselectable):hover {
         background: #aaac;
-        cursor: pointer;
       }
 
       #controls img {
         position: relative;
-        width: 7%;
-        height: 7%;
+        width: 10%;
+        height: 10%;
         margin-right: 5%;
         vertical-align: middle;
-        bottom: 0.4vh;
+        bottom: 0.2vh;
       }
 
       #alert {
@@ -1436,15 +1443,19 @@
       let images = {
         buttons: {
           menu: new Image(),
-          fullscreen: new Image(),
-          exitFullscreen: new Image(),
-          sound: new Image(),
-          noSound: new Image(),
-          showAlerts: new Image(),
-          noAlerts: new Image(),
           pause: new Image(),
+          fullscreenOn: new Image(),
+          fullscreenOff: new Image(),
+          soundOn: new Image(),
+          soundOff: new Image(),
+          alertsOn: new Image(),
+          alertsOff: new Image(),
+          exit: new Image(),
           play: new Image(),
-          fastForward: new Image()
+          fastForward: new Image(),
+          fastForwardGray: new Image(),
+          playWhite: new Image(),
+          fastForwardWhite: new Image()
         },
         abilitySymbols: {
           healing: new Image(),
@@ -1590,11 +1601,11 @@
         
         //Controls menu
         ctx.drawImage(images.buttons.menu, 15, 15, 30, 30);
-        document.getElementById("r0c0").classList.add("controlsButton");
+        document.getElementById("r0c0").classList.add("gameButton");
         document.getElementById("r0c0").onclick = () => {
+          pauseGame();
           let controls = document.createElement("div");
           controls.id = "controls";
-          pauseGame();
 
           let resume = document.createElement("div");
           resume.append(images.buttons.pause);
@@ -1603,31 +1614,95 @@
           controls.append(resume);
 
           let speed = document.createElement("div");
-          speed.append(images.buttons.play);
-          speed.innerHTML += "Fast forward off";
-          if (difficulty == "normal") speed.onclick = () => fastForward = !fastForward;
-          else speed.classList.add("unselectable");
+          if (difficulty == "normal") {
+            if (fastForward) {
+              speed.append(images.buttons.fastForward);
+              speed.innerHTML += "Fast forward on";
+            } else {
+              speed.append(images.buttons.play);
+              speed.innerHTML += "Fast forward off";
+            }
+            speed.onclick = () => {
+              fastForward = !fastForward;
+              speed.innerHTML = "";
+              if (fastForward) {
+                speed.append(images.buttons.fastForward);
+                speed.innerHTML += "Fast forward on";
+              } else {
+                speed.append(images.buttons.play);
+                speed.innerHTML += "Fast forward off";
+              }
+            };
+          } else {
+            speed.append(images.buttons.fastForwardGray);
+            speed.innerHTML += "Fast forward on";
+            speed.classList.add("unselectable");
+          }
           controls.append(speed);
 
           let fullscreen = document.createElement("div");
-          fullscreen.append(images.buttons.fullscreen);
-          fullscreen.innerHTML += "Fullscreen off";
+          if (fullscreenOn) {
+            fullscreen.append(images.buttons.fullscreenOn);
+            fullscreen.innerHTML += "Fullscreen on";
+          } else {
+            fullscreen.append(images.buttons.fullscreenOff);
+            fullscreen.innerHTML += "Fullscreen off";
+          }
           fullscreen.onclick = () => {
-            if (document.fullscreenElement) document.exitFullscreen();
-            else document.documentElement.requestFullscreen();
+            fullscreenOn = !fullscreenOn;
+            fullscreen.innerHTML = "";
+            if (fullscreenOn) {
+              document.documentElement.requestFullscreen();
+              fullscreen.append(images.buttons.fullscreenOn);
+              fullscreen.innerHTML += "Fullscreen on";
+            } else {
+              document.exitFullscreen();
+              fullscreen.append(images.buttons.fullscreenOff);
+              fullscreen.innerHTML += "Fullscreen off";
+            }
           };
           controls.append(fullscreen);
 
           let volume = document.createElement("div");
-          volume.append(images.buttons.sound);
-          volume.innerHTML += "Sound on";
-          volume.onclick = () => sound.enabled = !sound.enabled;
+          if (sound.enabled) {
+            volume.append(images.buttons.soundOn);
+            volume.innerHTML += "Sound on";
+          } else {
+            volume.append(images.buttons.soundOff);
+            volume.innerHTML += "Sound off";
+          }
+          volume.onclick = () => {
+            sound.enabled = !sound.enabled;
+            volume.innerHTML = "";
+            if (sound.enabled) {
+              volume.append(images.buttons.soundOn);
+              volume.innerHTML += "Sound on";
+            } else {
+              volume.append(images.buttons.soundOff);
+              volume.innerHTML += "Sound off";
+            }
+          }
           controls.append(volume);
 
           let alerts = document.createElement("div");
-          alerts.append(images.buttons.showAlerts);
-          alerts.innerHTML += "Alerts on";
-          alerts.onclick = () => noAlerts = !noAlerts;
+          if (alertsOn) {
+            alerts.append(images.buttons.alertsOn);
+            alerts.innerHTML += "Alerts on";
+          } else {
+            alerts.append(images.buttons.alertsOff);
+            alerts.innerHTML += "Alerts off";
+          }
+          alerts.onclick = () => {
+            alertsOn = !alertsOn;
+            alerts.innerHTML = "";
+            if (alertsOn) {
+              alerts.append(images.buttons.alertsOn);
+              alerts.innerHTML += "Alerts on";
+            } else {
+              alerts.append(images.buttons.alertsOff);
+              alerts.innerHTML += "Alerts off";
+            }
+          }
           controls.append(alerts);
 
           let exit = document.createElement("div");
@@ -1639,6 +1714,9 @@
           controls.append(exit);
 
           document.getElementById("container").append(controls);
+          document.getElementById("grid").onmouseup = function() {
+            this.onclick = resumeGame;
+          };
           document.addEventListener("keydown", e => {
             if (e.key == "Escape") resumeGame();
           });
@@ -1651,12 +1729,27 @@
           ctx.drawCircle(dragOver[1] * 60 + 30, dragOver[2] * 60 + 30, dragOver[0].range * 60);
         }
 
+        //Fast forward button
+        if (difficulty == "normal") {
+          ctx.drawImage(fastForward ? images.buttons.playWhite : images.buttons.fastForwardWhite, 75, 15, 30, 30);
+          document.getElementById("r0c1").classList.add("gameButton");
+          document.getElementById("r0c1").onclick = () => {
+            fastForward = !fastForward;
+            if (paused) {
+              resumeGame();
+            } else {
+              clearInterval(animate);
+              animate = setInterval(update, fastForward ? 10 : 40);
+            }
+          };
+        }
+
         //Spawn enemies
         if (!(frame % 4)) { //Do this every 4 frames
           let next = map.waves[currentWave][currentEnemy];
           while (Array.isArray(next)) {
             if (next[0] == "alert") {
-              if (!noAlerts) gameAlert(next[1]);
+              if (alertsOn) gameAlert(next[1]);
               map.waves[currentWave].splice(currentEnemy, 1); //Remove the array
             } else {
               let repeat = next[0]; //The array's first item is the number of times to repeat
@@ -2110,9 +2203,10 @@
       let currentWave = 0;
       let currentEnemy = 0;
       let superPlane;
-      let noAlerts;
       let paused;
-      let fastForward;
+      let fastForward = false;
+      let fullscreenOn = false;
+      let alertsOn = true;
       let dragOver;
       let animate;
 
@@ -2385,6 +2479,7 @@
         document.getElementById("startButton").remove();
 
         grid[0][0] = "button";
+        if (difficulty == "normal") grid[0][1] = "button";
         grid[0].fill("info", 26, 32); //Area for game info in the top right
 
         //Make an array with one item for each pixel of the path
@@ -2475,7 +2570,7 @@
           };
         }
 
-        this.onclick = null;
+        paused = false;
       };
 
       function pauseGame() {
@@ -2491,21 +2586,26 @@
         //If a tower's menu is open, close it
         let menuTower = towers.find(tower => tower?.menuOpen);
         menuTower?.closeMenu();
+        document.getElementById("alert")?.remove();
+        document.getElementById("controls")?.remove();
         document.getElementById("grid").classList.add("paused");
       }
 
       function resumeGame() {
-        paused = false;
-        animate = setInterval(update, fastForward ? 10 : 40); //If fast forward is turned on, play at 4x the normal speed
-        document.getElementById("towers").classList.remove("hidden");
+        if (paused) {
+          animate = setInterval(update, fastForward ? 10 : 40); //If fast forward is turned on, play at 4x the normal speed
+          document.getElementById("towers").classList.remove("hidden");
+          paused = false;
+        }
         document.getElementById("controls")?.remove(); //Hide the controls menu
         document.getElementById("alert")?.remove(); //Hide the alert box
         document.getElementById("grid").classList.remove("paused");
-        document.removeEventListener("keydown", resumeGame);
+        document.getElementById("grid").onmouseup = null;
+        document.getElementById("grid").onclick = null;
       }
 
       function gameAlert(message, type = "alert", size = "normal", confirmFunc) {
-        pauseGame();
+        if (paused === false) pauseGame();
         let alertBox = document.createElement("div");
         alertBox.id = "alert";
         alertBox.classList.add("centered");
