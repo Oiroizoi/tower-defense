@@ -306,7 +306,7 @@
         border: 1px solid #555;
       }
 
-      td.gameButton {
+      td.controlsButton {
         cursor: pointer;
       }
 
@@ -318,8 +318,40 @@
         background: #a555;
       }
 
-      td.tower {
+      #grid:not(.paused) td.tower {
         cursor: pointer;
+      }
+
+      #controls {
+        position: absolute;
+        top: calc(100% / 72);
+        left: calc(100% / 128);
+        box-sizing: border-box;
+        color: var(--bg-dark);
+        text-align: left;
+        filter: drop-shadow(10px 10px 5px black);
+      }
+
+      #controls div {
+        height: 10%;
+        padding: 5%;
+        font-size: 200%;
+        font-weight: 600;
+        background: #cccc;
+      }
+
+      #controls div:hover {
+        background: #aaac;
+        cursor: pointer;
+      }
+
+      #controls img {
+        position: relative;
+        width: 7%;
+        height: 7%;
+        margin-right: 5%;
+        vertical-align: middle;
+        bottom: 0.4vh;
       }
 
       #alert {
@@ -367,15 +399,13 @@
         content: "🗸  ";
       }
 
-      #ok {
+      #alert button {
         position: absolute;
-        left: 40%;
         bottom: 10%;
         width: 20%;
         height: 20%;
         padding: 0.25% 1%;
         background: white;
-        color: var(--color-blue);
         border: 1px solid;
         border-radius: 9999px;
         font-size: calc(400% / 3);
@@ -383,12 +413,27 @@
         filter: drop-shadow(2px 2px 1px #000c);
       }
 
-      #alert.large #ok {
+      #ok {
+        color: var(--color-blue);
+        left: 40%;
+      }
+
+      #yes {
+        color: var(--color-green);
+        left: 25%;
+      }
+
+      #no {
+        color: var(--color-red);
+        right: 25%;
+      }
+
+      #alert.large button {
         height: 12%;
         bottom: 6%;
       }
 
-      #ok:hover {
+      #alert button:hover {
         background: white !important;
         filter: brightness(90%) drop-shadow(2px 2px 1px #000a);
       }
@@ -1390,6 +1435,7 @@
       //All images used in the game except towers & enemies
       let images = {
         buttons: {
+          menu: new Image(),
           fullscreen: new Image(),
           exitFullscreen: new Image(),
           sound: new Image(),
@@ -1541,73 +1587,62 @@
       function update() {
         ctx.clearRect(0, 0, 1920, 1080); //Clear the canvas
         ctx.drawPath(map);
-
-        //Buttons in the top-left corner
-
-        //Fullscreen button
-        ctx.drawImage(document.fullscreenElement ? images.buttons.exitFullscreen : images.buttons.fullscreen, 15, 15, 30, 30);
-        document.getElementById("r0c0").classList.add("gameButton");
+        
+        //Controls menu
+        ctx.drawImage(images.buttons.menu, 15, 15, 30, 30);
+        document.getElementById("r0c0").classList.add("controlsButton");
         document.getElementById("r0c0").onclick = () => {
-          if (!paused) {
+          let controls = document.createElement("div");
+          controls.id = "controls";
+          pauseGame();
+
+          let resume = document.createElement("div");
+          resume.append(images.buttons.pause);
+          resume.innerHTML += "Resume";
+          resume.onclick = resumeGame;
+          controls.append(resume);
+
+          let speed = document.createElement("div");
+          speed.append(images.buttons.play);
+          speed.innerHTML += "Fast forward off";
+          if (difficulty == "normal") speed.onclick = () => fastForward = !fastForward;
+          else speed.classList.add("unselectable");
+          controls.append(speed);
+
+          let fullscreen = document.createElement("div");
+          fullscreen.append(images.buttons.fullscreen);
+          fullscreen.innerHTML += "Fullscreen off";
+          fullscreen.onclick = () => {
             if (document.fullscreenElement) document.exitFullscreen();
             else document.documentElement.requestFullscreen();
-          } else {
-            //Resume button
-            paused = false;
-            animate = setInterval(update, fastForward ? 10 : 40);
-            document.getElementById("towers").classList.remove("hidden");
-            if (document.getElementById("alert")) hideAlert(); //If there is an alert, hide it
-          }
-        };
-        //Sound button
-        ctx.drawImage(sound.enabled ? images.buttons.sound : images.buttons.noSound, 75, 15, 30, 30);
-        document.getElementById("r0c1").classList.add("gameButton");
-        document.getElementById("r0c1").onclick = () => {
-          if (!paused) sound.enabled = !sound.enabled
-        };
-        //Alerts button
-        ctx.drawImage(noAlerts ? images.buttons.noAlerts : images.buttons.showAlerts, 135, 15, 30, 30);
-        document.getElementById("r0c2").classList.add("gameButton");
-        document.getElementById("r0c2").onclick = () => {
-          if (!paused) {
-            if (noAlerts === undefined) gameAlert("No more alerts will be shown.");
-            noAlerts = !noAlerts;
-          }
-        };
-        //Pause button
-        ctx.drawImage(images.buttons.pause, 195, 15, 30, 30);
-        document.getElementById("r0c3").classList.add("gameButton");
-        document.getElementById("r0c3").onclick = () => {
-          if (!paused) {
-            paused = true;
-            clearInterval(animate);
-            document.getElementById("towers").classList.add("hidden");
-            for (let i = 1; i < 5; i++) document.getElementById("r0c" + i).classList.remove("gameButton");
-            //Prevent placing towers while paused
-            grid.forEach((row, i) => row.forEach((square, j) => {
-              let squareEl = document.getElementById("r" + i + "c" + j);
-              if (squareEl.ondragleave) squareEl.ondragleave();
-            }));
-            for (let tower in towerTypes) if (towerTypes[tower].dragging) document.getElementById(tower).ondragend();
-            //If a tower's menu is open, close it
-            let menuTower = towers.find(tower => tower?.menuOpen);
-            menuTower?.closeMenu();
-            ctx.clearRect(0, 0, 300, 60);
-            ctx.drawImage(fastForward ? images.buttons.fastForward : images.buttons.play, 15, 15, 30, 30);
-          }
-        };
-        //Fast forward button (normal mode only)
-        if (difficulty == "normal") {
-          ctx.drawImage(fastForward ? images.buttons.play : images.buttons.fastForward, 255, 15, 30, 30);
-          document.getElementById("r0c4").classList.add("gameButton");
-          document.getElementById("r0c4").onclick = () => {
-            if (!paused) {
-              fastForward = !fastForward;
-              clearInterval(animate);
-              animate = setInterval(update, fastForward ? 10 : 40); //If fast forward is turned on, play at 4x the normal speed
-            }
           };
-        }
+          controls.append(fullscreen);
+
+          let volume = document.createElement("div");
+          volume.append(images.buttons.sound);
+          volume.innerHTML += "Sound on";
+          volume.onclick = () => sound.enabled = !sound.enabled;
+          controls.append(volume);
+
+          let alerts = document.createElement("div");
+          alerts.append(images.buttons.showAlerts);
+          alerts.innerHTML += "Alerts on";
+          alerts.onclick = () => noAlerts = !noAlerts;
+          controls.append(alerts);
+
+          let exit = document.createElement("div");
+          exit.append(images.buttons.exit);
+          exit.innerHTML += "Exit game";
+          exit.onclick = () => {
+            gameAlert("Are you sure you want to exit?", "confirm", "normal", () => window.location.reload());
+          }
+          controls.append(exit);
+
+          document.getElementById("container").append(controls);
+          document.addEventListener("keydown", e => {
+            if (e.key == "Escape") resumeGame();
+          });
+        };
 
         if (dragOver && dragOver[0].name != "Air Tower") {
           ctx.lineWidth = 1;
@@ -2203,14 +2238,14 @@
           listText += `<li class=${earned ? "earned" : ""}><${tag}>${achievement}</${tag}></li>`;
         });
         listText += "</ul>";
-        gameAlert(listText, true);
+        gameAlert(listText, "alert", "large");
       }
       achvText.append(achvButton);
       progressEl.append(achvText);
 
       function showMaps() {
         document.getElementById("progress").classList.add("hidden");
-        if (document.getElementById("alert")) hideAlert();
+        if (document.getElementById("alert")) resumeGame();
         ctx.clearRect(0, 0, 1920, 1080); //Clear the canvas
 
         let container = document.getElementById("container");
@@ -2278,7 +2313,9 @@
         ctx.font = "48px Segoe UI";
         ctx.textAlign = "center";
         ctx.fillText(`${map.name} by ${map.author}`, 960, 75);
-        ctx.drawPreview(map); //Draw preview of map
+        try {
+          ctx.drawPreview(map); //Draw preview of map
+        } catch {}
         ctx.strokeStyle = "white";
         ctx.lineWidth = 2;
         ctx.strokeRect(480, 120, 960, 450);
@@ -2337,7 +2374,7 @@
         else if (map.waves.length > 75) errorMessage = "Too many waves. Maps must include 75 waves.";
         else if (!map.waves.every(wave => Array.isArray(wave))) errorMessage = "Each wave must be contained inside an array.";
         if (errorMessage) {
-          gameAlert("<b>Map error:</b> " + errorMessage, false, true);
+          gameAlert("<b>Map error:</b> " + errorMessage, "error");
           return;
         }
 
@@ -2347,7 +2384,7 @@
         document.getElementById("difficulty").remove();
         document.getElementById("startButton").remove();
 
-        grid[0].fill("button", 0, (difficulty == "normal") ? 5 : 4); //Buttons in to top left
+        grid[0][0] = "button";
         grid[0].fill("info", 26, 32); //Area for game info in the top right
 
         //Make an array with one item for each pixel of the path
@@ -2441,31 +2478,72 @@
         this.onclick = null;
       };
 
-      function gameAlert(message, large, error) {
-        document.getElementById("r0c3")?.click(); //Pause the game
+      function pauseGame() {
+        paused = true;
+        clearInterval(animate);
+        document.getElementById("towers").classList.add("hidden");
+        //Prevent placing towers while paused
+        grid.forEach((row, i) => row.forEach((square, j) => {
+          let squareEl = document.getElementById("r" + i + "c" + j);
+          if (squareEl.ondragleave) squareEl.ondragleave();
+        }));
+        for (let tower in towerTypes) if (towerTypes[tower].dragging) document.getElementById(tower).ondragend();
+        //If a tower's menu is open, close it
+        let menuTower = towers.find(tower => tower?.menuOpen);
+        menuTower?.closeMenu();
+        document.getElementById("grid").classList.add("paused");
+      }
+
+      function resumeGame() {
+        paused = false;
+        animate = setInterval(update, fastForward ? 10 : 40); //If fast forward is turned on, play at 4x the normal speed
+        document.getElementById("towers").classList.remove("hidden");
+        document.getElementById("controls")?.remove(); //Hide the controls menu
+        document.getElementById("alert")?.remove(); //Hide the alert box
+        document.getElementById("grid").classList.remove("paused");
+        document.removeEventListener("keydown", resumeGame);
+      }
+
+      function gameAlert(message, type = "alert", size = "normal", confirmFunc) {
+        pauseGame();
         let alertBox = document.createElement("div");
         alertBox.id = "alert";
         alertBox.classList.add("centered");
-        alertBox.classList.add("light");
-        if (large) alertBox.classList.add("large");
-        if (error) alertBox.classList.add("error");
+        if (size == "large") alertBox.classList.add("large");
+        if (type == "error") alertBox.classList.add("error");
         let alertText = document.createElement("div");
         alertText.id = "alertText";
         alertText.innerHTML = message;
         alertBox.append(alertText);
-        let okButton = document.createElement("button");
-        okButton.id = "ok";
-        okButton.innerText = "OK";
-        okButton.onclick = hideAlert;
-        alertBox.append(okButton);
+        let okButton;
+        let yesButton;
+        let noButton;
+        if (type == "confirm") {
+          yesButton = document.createElement("button");
+          yesButton.id = "yes";
+          yesButton.innerText = "Yes";
+          yesButton.onclick = () => {
+            confirmFunc();
+            resumeGame();
+          };
+          alertBox.append(yesButton);
+          noButton = document.createElement("button");
+          noButton.id = "no";
+          noButton.innerText = "No";
+          noButton.onclick = resumeGame;
+          alertBox.append(noButton);
+        } else {
+          okButton = document.createElement("button");
+          okButton.id = "ok";
+          okButton.innerText = "OK";
+          okButton.onclick = resumeGame;
+          alertBox.append(okButton);
+        }
         document.getElementById("container").append(alertBox);
-        document.addEventListener("keydown", hideAlert);
-      }
-
-      function hideAlert() {
-        document.getElementById("alert").remove(); //Hide the alert box
-        if (paused) document.getElementById("r0c0").click(); //Unpause the game
-        document.removeEventListener("keydown", hideAlert);
+        document.addEventListener("keydown", e => {
+          if (e.key == "Escape") resumeGame();
+        });
+        okButton ? okButton.focus() : yesButton.focus();
       }
 
       function endGame(complete) {
