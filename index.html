@@ -1210,13 +1210,9 @@
               menu.style.right = "0";
               menu.style.transform = "";
             }
-            menu.style.bottom = 100 - (this.y / 1080 * 100) + 10 + "%";
-            menuRect = menu.getBoundingClientRect(); //Get the menu position again
-            //If the menu goes above the top of the game, put it below the tower
-            if (menuRect.y < gameRect.y) {
-              menu.style.bottom = "";
-              menu.style.top = this.y / 1080 * 100 + 10 + "%";
-            }
+            //Put the menu above or below the tower
+            if (this.y > 450) menu.style.bottom = 100 - (this.y / 1080 * 100) + 10 + "%";
+            else menu.style.top = this.y / 1080 * 100 + 10 + "%";
 
             //Remove the tower and give back 75% of all money spent on it
             sellButton.onclick = () => {
@@ -1385,6 +1381,7 @@
           }
           this.slowed = 0;
           this.poisoned = 0;
+          this.noAbilities = 0;
           this.hit = function(damage, tower, type) {
             if (this.stunned) damage *= 2;
             let shieldProtection = this.abilities.includes("shield") && !this.noAbilities && type != "explosion" && type != "poison" && tower?.name != "Long-Range Tower" //Only explosions, poison, and Long-Range Towers can damage shielded enemies
@@ -1482,7 +1479,7 @@
 
       //Sound settings and list of sound effects
       let sound = {
-        enabled: true,
+        enabled: !!localStorage.getItem("sound") ?? true,
         delay: 0.05, //How long each sound effect must play before it can start over
         sfx: {},
         playSFX: function(name) {
@@ -1641,7 +1638,7 @@
           controls.append(speed);
 
           let fullscreen = document.createElement("div");
-          if (fullscreenOn) {
+          if (document.fullscreenElement) {
             fullscreen.append(images.buttons.fullscreenOn);
             fullscreen.innerHTML += "Fullscreen on";
           } else {
@@ -1649,18 +1646,19 @@
             fullscreen.innerHTML += "Fullscreen off";
           }
           fullscreen.onclick = () => {
-            fullscreenOn = !fullscreenOn;
+            if (document.fullscreenElement) document.exitFullscreen();
+            else document.documentElement.requestFullscreen();
+          };
+          document.onfullscreenchange = () => {
             fullscreen.innerHTML = "";
-            if (fullscreenOn) {
-              document.documentElement.requestFullscreen();
+            if (document.fullscreenElement) {
               fullscreen.append(images.buttons.fullscreenOn);
               fullscreen.innerHTML += "Fullscreen on";
             } else {
-              document.exitFullscreen();
               fullscreen.append(images.buttons.fullscreenOff);
               fullscreen.innerHTML += "Fullscreen off";
             }
-          };
+          }
           controls.append(fullscreen);
 
           let volume = document.createElement("div");
@@ -1675,9 +1673,11 @@
             sound.enabled = !sound.enabled;
             volume.innerHTML = "";
             if (sound.enabled) {
+              localStorage.setItem("sound", "true");
               volume.append(images.buttons.soundOn);
               volume.innerHTML += "Sound on";
             } else {
+              localStorage.setItem("sound", "");
               volume.append(images.buttons.soundOff);
               volume.innerHTML += "Sound off";
             }
@@ -1696,9 +1696,11 @@
             alertsOn = !alertsOn;
             alerts.innerHTML = "";
             if (alertsOn) {
+              localStorage.setItem("alerts", "true");
               alerts.append(images.buttons.alertsOn);
               alerts.innerHTML += "Alerts on";
             } else {
+              localStorage.setItem("alerts", "");
               alerts.append(images.buttons.alertsOff);
               alerts.innerHTML += "Alerts off";
             }
@@ -1708,9 +1710,7 @@
           let exit = document.createElement("div");
           exit.append(images.buttons.exit);
           exit.innerHTML += "Exit game";
-          exit.onclick = () => {
-            gameAlert("Are you sure you want to exit?", "confirm", "normal", () => window.location.reload());
-          }
+          exit.onclick = () => window.location.reload();
           controls.append(exit);
 
           document.getElementById("container").append(controls);
@@ -1803,7 +1803,7 @@
             }
             if (enemy.slowed) enemy.slowed--;
             if (enemy.poisoned && --enemy.poisoned % (enemy.doublePoisoned ? 12.5 : 25) < 1) enemy.hit(0.6, null, "poison");
-            if (!enemy.poisoned) delete enemy.doublePoisoned;
+            if (enemy.doublePoisoned) enemy.doublePoisoned--;
 
             enemy.x = map.start[0] * 60;
             enemy.y = map.start[1] * 60;
@@ -1930,11 +1930,11 @@
 
               if (sound.sfx[tower.hitSound]) sound.playSFX(tower.hitSound, tower.name); //Play hit sound
 
-              if (tower.slowing && !target.abilities.includes("acceleration")) target.slowed = tower.permSlow ? Infinity : 250;
-              if (tower.abilityBlocking && !target.abilities.includes("acceleration")) target.noAbilities = tower.permSlow ? Infinity : 250;
+              if (tower.slowing && !target.abilities.includes("acceleration")) target.slowed = tower.permSlow ? Infinity : Math.max(target.slowed, 250);
+              if (tower.abilityBlocking && !target.abilities.includes("acceleration")) target.noAbilities = tower.permSlow ? Infinity : Math.max(target.noAbilities, 250);
               if (tower.poison && !target.abilities.includes("healing")) {
                 target.poisoned = 125; //Poison the target for 125 frames
-                if (tower.doublePoison) target.doublePoisoned = true;
+                if (tower.doublePoison) target.doublePoisoned = 125;
               }
               if (tower.bounce) {
                 let bouncePath = [target]; //Make an array of all enemies hit so they aren't bounced to again
@@ -1968,7 +1968,7 @@
                   let distance = Math.sqrt((target.x - closest.x) ** 2 + (target.y - closest.y) ** 2);
                   target = closest;
                   target.poisoned = 125;
-                  if (tower.doublePoison) target.doublePoisoned = true;
+                  if (tower.doublePoison) target.doublePoisoned = 125;
                 }
               }
               if (tower.nextExplosion === 0) tower.explosionSize = 75;
@@ -2076,6 +2076,9 @@
             towerEl.draggable = true;
             //Do this when the tower is picked up
             towerEl.ondragstart = () => {
+              //If a tower's menu is open, close it
+              let menuTower = towers.find(tower => tower?.menuOpen);
+              menuTower?.closeMenu();
               towerTypes[tower].dragging = true;
               document.getElementById("grid").classList.add("visibleLines"); //Show the grid's lines
               grid.forEach((row, i) => row.forEach((square, j) => {
@@ -2205,8 +2208,7 @@
       let superPlane;
       let paused;
       let fastForward = false;
-      let fullscreenOn = false;
-      let alertsOn = true;
+      let alertsOn = localStorage.getItem("alerts") ?? true;
       let dragOver;
       let animate;
 
@@ -2478,6 +2480,8 @@
         document.getElementById("difficulty").remove();
         document.getElementById("startButton").remove();
 
+        window.onbeforeunload = () => true; //Show warning before leaving page
+
         grid[0][0] = "button";
         if (difficulty == "normal") grid[0][1] = "button";
         grid[0].fill("info", 26, 32); //Area for game info in the top right
@@ -2606,6 +2610,7 @@
 
       function gameAlert(message, type = "alert", size = "normal", confirmFunc) {
         if (paused === false) pauseGame();
+        document.getElementById("alert")?.remove(); //If there is already an alert, hide it
         let alertBox = document.createElement("div");
         alertBox.id = "alert";
         alertBox.classList.add("centered");
@@ -2659,9 +2664,10 @@
           gameAchievements[5] = 0;
           gameAchievements[6] = 0;
         }
+        window.onbeforeunload = null;
         let allAchievements = achievements.map((achievement, i) => +achievement || gameAchievements[i]); //New achievements + ones that were earned before
         localStorage.setItem("achievements", allAchievements.join(""));
-        //If a tower has a menu open, close it
+        //If a tower's menu is open, close it
         let menuTower = towers.find(tower => tower?.menuOpen);
         menuTower?.closeMenu();
         clearInterval(animate);
