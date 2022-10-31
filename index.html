@@ -1722,13 +1722,6 @@
           });
         };
 
-        if (dragOver && dragOver[0].name != "Air Tower") {
-          ctx.lineWidth = 1;
-          ctx.strokeStyle = "white";
-          ctx.fillStyle = "#aaa5";
-          ctx.drawCircle(dragOver[1] * 60 + 30, dragOver[2] * 60 + 30, dragOver[0].range * 60);
-        }
-
         //Fast forward button
         if (difficulty == "normal") {
           ctx.drawImage(fastForward ? images.buttons.playWhite : images.buttons.fastForwardWhite, 75, 15, 30, 30);
@@ -1742,6 +1735,13 @@
               animate = setInterval(update, fastForward ? 10 : 40);
             }
           };
+        }
+
+        if (dragOver && dragOver[0].name != "Air Tower") {
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = "white";
+          ctx.fillStyle = "#aaa5";
+          ctx.drawCircle(dragOver[1] * 60 + 30, dragOver[2] * 60 + 30, dragOver[0].range * 60);
         }
 
         //Spawn enemies
