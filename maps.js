@@ -437,6 +437,7 @@ let maps = [
   {
     name: "Oops! All Shields",
     author: "Oley Birkeland",
+    unlock: 8,
     start: [-0.5, 3.5],
     lines: [
       ["right", 7],
