@@ -2652,7 +2652,7 @@
           };
         } else {
           exit.innerHTML += "Exit game";
-          exit.onclick = () => window.location.reload();
+          exit.onclick = () => window.location = "";
         }
         controls.append(exit);
 
@@ -3308,7 +3308,7 @@
       let back = document.createElement("div");
       back.id = "back";
       back.innerText = "🡄";
-      back.onclick = () => window.location.reload();
+      back.onclick = () => window.location = "";
 
       let left = document.createElement("div");
       let right = document.createElement("div");
@@ -3692,7 +3692,7 @@
           };
         } else {
           ctx.fillText("Click to return to the home screen", 960, 800);
-          document.getElementById("game").onclick = () => window.location.reload();
+          document.getElementById("game").onclick = () => window.location = "";
         }
         return;
       }
@@ -3728,7 +3728,7 @@
         ctx.font = "48px Segoe UI";
         ctx.fillStyle = "white";
         ctx.fillText("Click to return to the home screen", 960, 800);
-        document.getElementById("game").onclick = () => window.location.reload();
+        document.getElementById("game").onclick = () => window.location = "";
       } else {
         sound.playSFX("shoot");
         gameAchievements[4] = 0;
@@ -3744,7 +3744,7 @@
         home.id = "home";
         home.classList.add("hCentered");
         home.innerText = "Home screen";
-        home.onclick = () => window.location.reload();
+        home.onclick = () => window.location = "";
         document.getElementById("container").append(tryAgain, home);
       }
 
@@ -3770,6 +3770,17 @@
     let drawing;
     let fromStart;
 
+    let newWavesArr = Array(75).fill().map(() => []);
+    let movingWave;
+    let startingPosition;
+    let waveDisplacement;
+    let cursorY;
+    let copiedWave;
+    let pauseImg = new Image();
+    pauseImg.src = "img/break.png";
+    let alertImg = new Image();
+    alertImg.src = "img/alert.png";
+
     function openEditor() {
       ctx.clearRect(0, 0, 1920, 1080); //Clear the canvas
       document.getElementById("lightBackground")?.remove();
@@ -3778,6 +3789,8 @@
       document.getElementById("progress")?.remove();
       document.getElementById("playButton")?.remove();
       document.getElementById("editorButton")?.remove();
+
+      testing = false;
 
       editingMap = undefined;
       newPathSquares = [];
@@ -3789,7 +3802,7 @@
       let back = document.createElement("div");
       back.id = "back";
       back.innerText = "🡄";
-      back.onclick = () => window.location.reload();
+      back.onclick = () => window.location = "";
 
       ctx.fillStyle = "white";
       ctx.textAlign = "center";
@@ -3872,7 +3885,6 @@
         } else {
           if (!hour) hour = 12;
           period = "AM";
-
         }
         lastEdited.innerText = `Edited ${month}/${day}/${year} ${hour}:${minute} ${period}`;
 
@@ -4060,7 +4072,7 @@
 
       newPathStart = [editingMap.start[1] + 0.5, editingMap.start[0] + 0.5];
       newPathArr = editingMap.lines;
-      newWavesArr = editingMap.waves;
+      newWavesArr = editingMap.waves || Array(75).fill().map(() => []);
     }
 
     function createPath(goBack) {
@@ -4619,17 +4631,6 @@
       );
     }
 
-    let newWavesArr = Array(75).fill().map(() => []);
-    let movingWave;
-    let startingPosition;
-    let waveDisplacement;
-    let cursorY;
-    let copiedWave;
-    let pauseImg = new Image();
-    pauseImg.src = "img/break.png";
-    let alertImg = new Image();
-    alertImg.src = "img/alert.png";
-
     function createWaves() {
       let container = document.getElementById("container");
 
@@ -4739,7 +4740,11 @@
           }
           cursorY = event.clientY;
         };
-        wavesBox.onscroll = wavesBox.onmousemove; //Update the positions of waves when wavesBox is scrolled
+        //Update the positions of waves when wavesBox is scrolled
+        wavesBox.onscroll = function () {
+          this.onmousemove();
+          removeItem.style.top = this.scrollTop + "px";
+        };
         document.onmouseup = () => {
           if (movingWave == null) return;
           document.getElementById("wave" + movingWave).style.top = 0;
@@ -5799,7 +5804,7 @@
       let oldMap = editingMap || {start: undefined, lines: [], waves: wavesDefault};
       if (newPathStart && JSON.stringify([newPathStart[1] - 0.5, newPathStart[0] - 0.5]) != JSON.stringify(oldMap.start)) return true;
       if (JSON.stringify(newPathArr) != JSON.stringify(oldMap.lines)) return true;
-      if (newWavesArr?.every(wave => !wave.length) && JSON.stringify(oldMap.waves) == JSON.stringify(wavesDefault)) return;
+      if (newWavesArr.every(wave => !wave.length) && JSON.stringify(oldMap.waves) == JSON.stringify(wavesDefault)) return;
       if (JSON.stringify(newWavesArr).replaceAll("\"pause\"", "[10,null]") != JSON.stringify(oldMap.waves)) return true;
     }
 
@@ -5836,7 +5841,7 @@
         localStorage.setItem("td-maps", JSON.stringify(myMaps));
       }
       window.onbeforeunload = null;
-      window.location.reload();
+      window.location = "";
     }
 
     function testMap() {
